@@ -65,87 +65,100 @@ public class ImageProcessor
 	public static BufferedImage contrastEnhancement(Image img) {
 		
 		// Convert image from type Image to BufferedImage
-		BufferedImage originalImage = convert(img);
+		BufferedImage originalImg = convert(img);
 		
 		// Set up three arrays to store the RGB values of pixels
-		int numOfPixel = originalImage.getHeight() * originalImage.getWidth();
-		int[] redVal = new int[numOfPixel];
-		int[] greenVal = new int[numOfPixel];
-		int[] blueVal = new int[numOfPixel];
+		int numOfPixel = originalImg.getHeight() * originalImg.getWidth();
+		int[] greyVal = new int[numOfPixel];
 		
 		// Read RGB values of pixels from left to right and up to down, and store them in the arrays
-		for(int j = 0; j < originalImage.getHeight(); j++)
+		for(int j = 0; j < originalImg.getHeight(); j++)
 		{
-			for(int i = 0; i < originalImage.getWidth(); i++)
+			for(int i = 0; i < originalImg.getWidth(); i++)
 			{
-				int values = originalImage.getRGB(i, j);
+				int values = originalImg.getRGB(i, j);
 				Color oldColor= new Color(values);
 				
-				redVal[i + j*i] = oldColor.getRed();
+				greyVal[i + j*i] = oldColor.getRed();
 			}
 		}
 		
-		for(int j = 0; j < originalImage.getHeight(); j++)
-		{
-			for(int i = 0; i < originalImage.getWidth(); i++)
-			{
-				int values = originalImage.getRGB(i, j);
-				Color oldColor= new Color(values);
-				
-				greenVal[i + j*i] = oldColor.getGreen();
-			}
-		}
-		
-		for(int j = 0; j < originalImage.getHeight(); j++)
-		{
-			for(int i = 0; i < originalImage.getWidth(); i++)
-			{
-				int values = originalImage.getRGB(i, j);
-				Color oldColor= new Color(values);
-				
-				blueVal[i + j*i] = oldColor.getBlue();
-			}
-		}
-		
-		
-		// Call in the ordered method to get arrays in order
-		orderedVal(redVal);
-		orderedVal(greenVal);
-		orderedVal(blueVal);
-		
-		// Using the last element(biggest) subtract the first element(smallest) to get the scale factor
-		double redScaleFactor = 255.0 / (redVal[numOfPixel - 1] - redVal[0]);
-		double greenScaleFactor = 255.0 / (greenVal[numOfPixel - 1] - greenVal[0]);
-		double blueScaleFactor = 255.0 / (blueVal[numOfPixel - 1] - blueVal[0]);
+		// Call in two methods 'min' and 'max' to calculate the scalefactor
+		double ScaleFactor = 255.0 / (max(greyVal) - min(greyVal));
 		
 		// Using the factor to change the value of each pixel of the picture, and store them in the copy
-		for(int j = 0; j < originalImage.getHeight(); j++)
+		for(int j = 0; j < originalImg.getHeight(); j++)
 		{
-			for(int i = 0; i < originalImage.getWidth(); i++)
+			for(int i = 0; i < originalImg.getWidth(); i++)
 			{
-				int values = originalImage.getRGB(i, j);
+				int values = originalImg.getRGB(i, j);
 				Color oldColor= new Color(values);
 				
-				double newRedValue = redScaleFactor * oldColor.getRed();
-				double newGreenValue = greenScaleFactor * oldColor.getGreen();
-				double newBlueValue = blueScaleFactor * oldColor.getBlue();
-				
-				Color newColor = new Color((int)newRedValue, (int)newGreenValue, (int)newBlueValue);
-				originalImage.setRGB(i, j, newColor.getRGB());
+				double newGreyValue = ScaleFactor * oldColor.getRed();
+
+				Color newColor = new Color((int)newGreyValue, (int)newGreyValue, (int)newGreyValue);
+				originalImg.setRGB(i, j, newColor.getRGB());
 			}
 		}
 		
 		
 		
-		return originalImage;
+		return originalImg;
 	}
 
 	// Part A - Problem 2: sineWaveWarping
 	public static BufferedImage sineWaveWarping(Image img, double amplitude, int noPeriod, int direction) {
 		
-		// Implement your sineWaveWarping method here.
+		// Convert image from type Image to BufferedImage
+		BufferedImage originalImg = convert(img);
 		
-		return null; // This is for empty method to compile, change this when you implement your method.
+		//Copy the image and name it resultImg
+		BufferedImage resultImg = originalImg;
+		
+		// For each pixel in resultImg
+	    for(int j = 0; j < resultImg.getHeight(); j++)
+		{
+			for(int i = 0; i < resultImg.getWidth(); i++)
+			{
+				int originalX = 0, originalY = 0;
+				
+				if(direction == 0)
+				{
+					double disp = amplitude * Math.sin(i * noPeriod * 2 * Math.PI / originalImg.getWidth());
+				    originalY = (int)(j + disp);
+				    originalX = i;
+				    
+				    // Make sure the pixel is not out of the boundary
+				    if (originalY < 0)
+				       originalY = 0;
+				    if (originalY > originalImg.getHeight() - 1)
+				       originalY = originalImg.getHeight() - 1;
+				    
+				    // Track the value of X and Y
+				    System.out.println(originalX + " " + originalY);
+				}
+			    if(direction == 1)
+				{
+					double disp = amplitude * Math.sin(j * noPeriod * 2 * Math.PI / originalImg.getHeight());
+				    originalX = (int)(i + disp);
+				    originalY = j;
+				    
+				    // Make sure the pixel is not out of the boundary
+				    if (originalX < 0)
+				       originalX = 0;
+				    if (originalX > originalImg.getWidth() - 1)
+				       originalX = originalImg.getWidth() - 1;
+				    
+				    // Track the value of X and Y
+				    System.out.println(originalX + " " + originalY);
+				}
+
+			    // Copy the value from the origin image to the result image
+				resultImg.setRGB(i, j, originalImg.getRGB(originalX, originalY));
+			}
+		}
+
+		return resultImg;
 	}
 
 	// Part B - Problem 1: edgeFiltering
@@ -167,21 +180,28 @@ public class ImageProcessor
 	}
 	
 	// By comparing values of the array, rearrange them in the order that from the smallest to the biggest
-	public static void orderedVal(int[] origin)
+	public static int max(int[] origin)
 	{
-		 int n = origin.length;   
-		    for (int i = 0; i < n - 1; i++)
-		    {   
-		      for (int j = 0; j < n - 1; j++)
-		      {   
-		        if (origin[j] > origin[j + 1])
-		        {  
-		          int temp = origin[j];   
-		          origin[j] = origin[j + 1];   
-		          origin[j + 1] = temp;   
-		        }   
-		      }   
-		    } 
+		int max = origin[0];
+		for(int i = 1; i < origin.length; i++)
+		{
+			if(origin[i] > max)
+				max = origin[i];
+		}
+		
+		return max;
+	}
+	
+	public static int min(int[] origin)
+	{
+		int min = origin[0];
+		for(int i = 1; i < origin.length; i++)
+		{
+			if(origin[i] < min)
+				min = origin[i];
+		}
+		
+		return min;
 	}
 
 	// *************************************
